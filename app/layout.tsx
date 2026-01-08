@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import "./globals.css";
+import ConditionalLayout from "./ConditionalLayout";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -28,19 +27,22 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getServerSession(authOptions);
+
   return (
     <html lang="en">
       <body
         className={`${inter.variable} ${outfit.variable} antialiased`}
       >
-        <Navbar />
-        {children}
-        <Footer />
+        <ConditionalLayout session={session}>{children}</ConditionalLayout>
       </body>
     </html>
   );

@@ -6,9 +6,8 @@ import { eq } from "drizzle-orm";
  * Generate unique serial numbers and QR hashes for a batch of products.
  * Uses a database transaction to ensure atomicity.
  */
-export async function generateProductSerials(productId: number, count: number) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return await db.transaction(async (tx: any) => {
+export async function generateProductSerials(productId: string, count: number) {
+  return await db.transaction(async (tx) => {
     // 1. Verify product exists and get its name or prefix
     const product = await tx.query.products.findFirst({
       where: eq(products.id, productId),

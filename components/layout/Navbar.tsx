@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { ChevronDown, Search, ShoppingBag, User } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { ChevronDown, Search, ShoppingBag, User, Cpu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useModalStore } from "@/store/useModalStore";
+import { useCartStore } from "@/store/useCartStore";
+import { useSession, signOut } from "next-auth/react";
 
 const navItems = [
   { 
@@ -60,8 +63,48 @@ const navItems = [
 ];
 
 export default function Navbar() {
+  const { openSizeAI, openCheckoutAI } = useModalStore();
+  const { getTotalItems } = useCartStore();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [storedSize, setStoredSize] = useState<string | null>(null);
+  const { data: session, status } = useSession();
+  const [isMounted, setIsMounted] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const totalItems = getTotalItems();
+
+  useEffect(() => {
+    // Check initial storage after mount to avoid hydration mismatch and cascading renders
+    const checkStorage = () => {
+      const saved = localStorage.getItem("grassland_digital_footprint");
+      if (saved) {
+        const { recommendedSize } = JSON.parse(saved);
+        setStoredSize(recommendedSize);
+      }
+      setIsMounted(true);
+    };
+
+    // Defer to avoid the "synchronous setState in effect" lint error/warning
+    const timer = setTimeout(checkStorage, 0);
+    
+    // Listen for storage changes
+    const handleStorageChange = () => {
+      const updated = localStorage.getItem("grassland_digital_footprint");
+      if (updated) {
+        const { recommendedSize } = JSON.parse(updated);
+        setStoredSize(recommendedSize);
+      }
+    };
+    
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("footprintUpdated", handleStorageChange);
+    
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("footprintUpdated", handleStorageChange);
+    };
+  }, []);
 
   const handleMouseEnter = (name: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -71,11 +114,11 @@ export default function Navbar() {
   const handleMouseLeave = () => {
     timeoutRef.current = setTimeout(() => {
       setActiveDropdown(null);
-    }, 300); // 300ms delay for smoothness
+    }, 300);
   };
 
   return (
-    <nav className="glass-morphism fixed top-0 z-[100] w-full px-8 py-4 sm:px-16">
+    <nav className="fixed top-0 z-[100] w-full bg-white/95 backdrop-blur-lg px-8 py-4 sm:px-16 border-b border-gh-silver/20">
       <div className="mx-auto flex max-w-7xl items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
@@ -85,6 +128,7 @@ export default function Navbar() {
             width={150} 
             height={40} 
             className="h-10 w-auto object-contain"
+            style={{ height: '40px', width: 'auto' }}
           />
         </Link>
 
@@ -102,7 +146,6 @@ export default function Navbar() {
                 <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${activeDropdown === item.name ? 'rotate-180' : ''}`} />
               </button>
               
-              {/* Dropdown Menu (Mega Menu Style) */}
               <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[580px] overflow-hidden bg-white shadow-2xl rounded-sm border border-gh-silver/30 transition-all duration-500 ease-in-out ${activeDropdown === item.name ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}>
                 <div className="p-10 grid grid-cols-3 gap-8">
                   {item.sections.map((section) => (
@@ -112,14 +155,14 @@ export default function Navbar() {
                       </h4>
                       <div className="flex flex-col gap-3">
                         {section.items.map((subItem) => (
-                          <a 
+                          <Link 
                             key={subItem} 
-                            href="#" 
+                            href="/shop" 
                             className="group/item flex items-center text-xs font-bold uppercase tracking-wider text-gh-charcoal/70 hover:text-gh-charcoal transition-all"
                           >
                             <span className="h-[1px] w-0 bg-gh-charcoal group-hover/item:w-3 transition-all mr-0 group-hover/item:mr-2" />
                             {subItem}
-                          </a>
+                          </Link>
                         ))}
                       </div>
                     </div>
@@ -127,7 +170,7 @@ export default function Navbar() {
                 </div>
                 <div className="bg-gh-off-white/50 p-6 flex justify-between items-center border-t border-gh-silver/30">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-gh-charcoal/50 italic">Grassland Innovation Labs</span>
-                  <a href="#" className="text-[10px] font-black uppercase tracking-widest text-gh-charcoal border-2 border-gh-charcoal px-4 py-2 hover:bg-gh-charcoal hover:text-white transition-all">View All</a>
+                  <Link href="/shop" className="text-[10px] font-black uppercase tracking-widest text-gh-charcoal border-2 border-gh-charcoal px-4 py-2 hover:bg-gh-charcoal hover:text-white transition-all">View All</Link>
                 </div>
               </div>
             </div>
@@ -136,17 +179,70 @@ export default function Navbar() {
 
         {/* Icons & CTA */}
         <div className="flex items-center gap-6">
+          <button 
+            onClick={openSizeAI}
+            className="hidden items-center gap-2 rounded-full bg-gh-charcoal text-white px-4 py-1.5 transition-all hover:opacity-90 sm:flex group cursor-pointer"
+          >
+            <Cpu className="h-4 w-4 animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              {storedSize ? `US ${storedSize} (Saved)` : "Sizing AI"}
+            </span>
+          </button>
           <div className="hidden items-center gap-4 text-gh-charcoal sm:flex">
-            <Search className="h-5 w-5 cursor-pointer hover:opacity-70" />
-            <User className="h-5 w-5 cursor-pointer hover:opacity-70" />
-            <div className="relative cursor-pointer hover:opacity-70">
+            <div 
+              onClick={() => useModalStore.getState().openSearchAI()}
+              className="group flex items-center gap-2 cursor-pointer"
+            >
+              <Search className="h-5 w-5 hover:opacity-70" />
+            </div>
+            
+            {status === "authenticated" ? (
+              <div className="relative group/user">
+                <Link href="/dashboard">
+                  <User className="h-5 w-5 cursor-pointer hover:opacity-70 text-green-600" />
+                </Link>
+                <div className="absolute right-0 top-full pt-4 opacity-0 pointer-events-none group-hover/user:opacity-100 group-hover/user:pointer-events-auto transition-all duration-300">
+                  <div className="bg-white border border-gh-silver/20 shadow-xl rounded-xl p-4 w-48 flex flex-col gap-2">
+                    <div className="pb-3 border-b border-gh-silver/10 mb-1">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-gh-charcoal/40">Logged in as</p>
+                      <p className="text-xs font-bold text-gh-charcoal truncate">{session?.user?.name || "User"}</p>
+                    </div>
+                    <Link href="/dashboard" className="text-[10px] font-bold uppercase tracking-widest text-gh-charcoal hover:bg-gh-off-white px-3 py-2 rounded-lg transition-colors">
+                      My Dashboard
+                    </Link>
+                    <Link href="/dashboard/orders" className="text-[10px] font-bold uppercase tracking-widest text-gh-charcoal hover:bg-gh-off-white px-3 py-2 rounded-lg transition-colors">
+                      Orders
+                    </Link>
+                    <button 
+                      onClick={() => signOut({ callbackUrl: "/login" })}
+                      className="text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors text-left"
+                    >
+                      Log Out
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+                <Link href="/login">
+                  <User className="h-5 w-5 cursor-pointer hover:opacity-70" />
+                </Link>
+            )}
+
+            <div 
+              onClick={openCheckoutAI}
+              className="relative cursor-pointer hover:opacity-70"
+            >
               <ShoppingBag className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-gh-charcoal text-[10px] text-white">0</span>
+              {isMounted && totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-gh-charcoal text-[10px] text-white animate-bounce">
+                  {totalItems}
+                </span>
+              )}
             </div>
           </div>
-          <button className="hidden rounded-none border-2 border-gh-charcoal px-6 py-2 text-[10px] font-black uppercase tracking-widest text-gh-charcoal transition-all hover:bg-gh-charcoal hover:text-white sm:block">
-            Hall of Fame
-          </button>
+          <Link href="/fame-network" className="hidden rounded-none border-2 border-gh-charcoal px-6 py-2 text-[10px] font-black uppercase tracking-widest text-gh-charcoal transition-all hover:bg-gh-charcoal hover:text-white sm:block">
+            Fame Network
+          </Link>
         </div>
       </div>
     </nav>

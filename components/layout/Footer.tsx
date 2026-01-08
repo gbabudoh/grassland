@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Facebook, Instagram, Twitter, Youtube, ArrowRight } from "lucide-react";
+import { useModalStore } from "@/store/useModalStore";
 
 const footerLinks = [
   {
@@ -52,13 +53,45 @@ export default function Footer() {
             <div key={section.title}>
               <h4 className="text-sm font-black uppercase tracking-widest mb-6 italic">{section.title}</h4>
               <ul className="space-y-4">
-                {section.links.map((link) => (
-                  <li key={link}>
-                    <Link href="#" className="text-sm text-white/50 hover:text-white transition-colors font-medium">
-                      {link}
-                    </Link>
-                  </li>
-                ))}
+                {section.links.map((link) => {
+                  // Link resolution logic
+                  let href = "#";
+
+                  // Shop Section
+                  if (section.title === "Shop") href = "/shop";
+
+                  // Help Section
+                  if (link === "Order Status") href = "/dashboard/orders";
+                  if (link === "Contact Us") href = "/contact";
+                  if (link === "FAQ") href = "/faq";
+                  if (link === "Shipping") href = "/shipping";
+                  if (link === "Returns") href = "/returns";
+                  
+                  // About Section
+                  if (link === "Our Story") href = "/about";
+                  if (link === "Innovation Lab") href = "/innovation";
+                  if (link === "Sustainability") href = "/sustainability";
+                  if (link === "Careers") href = "/careers";
+                  if (link === "Investors") href = "/investors";
+                  if (link === "News") href = "/news";
+
+                  return (
+                    <li key={link}>
+                      {link === "Size Guide" ? (
+                        <button 
+                          onClick={() => useModalStore.getState().openSizeAI()}
+                          className="text-sm text-white/50 hover:text-white transition-colors font-medium text-left"
+                        >
+                          {link}
+                        </button>
+                      ) : (
+                        <Link href={href} className="text-sm text-white/50 hover:text-white transition-colors font-medium">
+                          {link}
+                        </Link>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}

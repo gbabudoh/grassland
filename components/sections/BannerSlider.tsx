@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, EffectFade, Navigation, Pagination } from 'swiper/modules';
 import Image from 'next/image';
@@ -13,9 +14,7 @@ import 'swiper/css/pagination';
 const slides = [
   {
     type: "video",
-    // Reliable sample video for testing
-    video: "https://v1.covered.africa/api/public/dl/v1/9a4a6d64-c494-4f3c-b6ae-88d502e81fa7/placeholder_video_1.mp4", 
-    fallbackVideo: "https://www.w3schools.com/html/mov_bbb.mp4",
+    video: "https://www.w3schools.com/html/mov_bbb.mp4", 
     title: "Velocity In Motion",
     subtitle: "Aerodynamic Cross-Breed Engineering"
   },
@@ -71,7 +70,6 @@ export default function BannerSlider() {
                   className={`h-full w-full object-cover ${slide.layout === "corner" ? "opacity-100 brightness-100" : "opacity-60 brightness-110"}`}
                 >
                   <source src={slide.video} type="video/mp4" />
-                  {slide.fallbackVideo && <source src={slide.fallbackVideo} type="video/mp4" />}
                 </video>
               </div>
             ) : (
@@ -81,8 +79,10 @@ export default function BannerSlider() {
                   src={slide.image!}
                   alt={slide.title}
                   fill
+                  sizes="100vw"
                   className="object-cover brightness-90 transition-transform duration-[8000ms] scale-100 group-hover:scale-110"
                   priority={index === 0}
+                  loading={index === 0 ? "eager" : "lazy"}
                 />
                 {/* Techy Video Overlay - Lower opacity, better blend */}
                 <div className="absolute inset-0 z-10 opacity-20 pointer-events-none bg-black/10">
@@ -122,9 +122,12 @@ export default function BannerSlider() {
                     {slide.title}
                   </h1>
                   <div className="flex flex-col gap-4 sm:flex-row justify-center">
-                    <button className="h-14 w-64 border-2 border-white text-sm font-bold uppercase tracking-widest text-white transition-all hover:bg-white hover:text-gh-charcoal">
+                    <Link 
+                      href="/shop"
+                      className="h-14 w-64 border-2 border-white flex items-center justify-center text-sm font-bold uppercase tracking-widest text-white transition-all hover:bg-white hover:text-gh-charcoal cursor-pointer"
+                    >
                       Shop Collection
-                    </button>
+                    </Link>
                     <button className="h-14 w-64 bg-white/20 backdrop-blur-lg border border-white/30 text-sm font-bold uppercase tracking-widest text-white transition-all hover:bg-white/40">
                       Explore Tech
                     </button>
@@ -139,8 +142,8 @@ export default function BannerSlider() {
         ))}
       </Swiper>
       
-      {/* Cinematic Grain Effect */}
-      <div className="absolute inset-0 z-40 pointer-events-none opacity-[0.05] bg-[url('https://grain-y.com/images/grain.png')] mix-blend-overlay" />
+      {/* Grain Overlay - Removing broken external link */}
+      <div className="absolute inset-0 z-40 pointer-events-none opacity-[0.05] mix-blend-overlay" />
     </div>
   );
 }
