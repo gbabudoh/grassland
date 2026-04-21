@@ -14,20 +14,20 @@ import 'swiper/css/pagination';
 const slides = [
   {
     type: "video",
-    video: "https://www.w3schools.com/html/mov_bbb.mp4", 
+    video: "https://assets.mixkit.co/videos/preview/mixkit-athlete-training-on-the-running-track-40019-large.mp4",
     title: "Velocity In Motion",
     subtitle: "Aerodynamic Cross-Breed Engineering"
   },
   {
     type: "image",
     image: "/grassland_banner_1_1767749428961.png",
-    overlayVideo: "https://www.w3schools.com/html/movie.mp4",
+    overlayVideo: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-running-in-the-city-32830-large.mp4",
     title: "Next Gen Performance",
     subtitle: "Precision Engineered Footwear"
   },
   {
     type: "video",
-    video: "https://www.w3schools.com/html/mov_bbb.mp4",
+    video: "https://assets.mixkit.co/videos/preview/mixkit-sprinter-crossing-the-finish-line-of-a-race-track-32829-large.mp4",
     title: "Pure Kinetic Force",
     subtitle: "Reimagining Human Potential"
   },

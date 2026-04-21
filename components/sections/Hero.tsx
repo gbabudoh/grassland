@@ -114,7 +114,7 @@ export default function Hero() {
               <p className="mb-12 max-w-xl mx-auto text-lg font-medium text-white/80">
                 Experience the science of motion. Our latest lab tests reveal how the G1 Matrix redirects 94% of impact force back into kinetic acceleration.
               </p>
-              <button className="flex items-center gap-6 mx-auto group">
+              <Link href="/innovation" className="flex items-center gap-6 mx-auto group">
                 <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-white text-white transition-all group-hover:bg-white group-hover:text-gh-charcoal group-hover:scale-110">
                   <Play className="h-8 w-8 ml-1" fill="currentColor" />
                 </div>
@@ -122,7 +122,7 @@ export default function Hero() {
                   <span className="block text-sm font-black uppercase tracking-[0.2em] text-white/60">The Brand Film</span>
                   <span className="block text-xl font-black uppercase tracking-widest text-white group-hover:translate-x-2 transition-transform italic">Watch Innovation In Motion</span>
                 </div>
-              </button>
+              </Link>
            </div>
         </div>
       </section>
@@ -130,48 +130,51 @@ export default function Hero() {
       {/* Shop Category Grid (Quick Preview) */}
       <section id="shop" className="bg-gh-white py-32 px-6">
         <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-[600px]">
-              <div className="relative group overflow-hidden cursor-pointer">
-                <Image 
-                  src="/grassland_banner_1_1767749428961.png" 
-                  alt="Men's" 
-                  fill 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 min-h-100 md:h-150">
+              <Link href="/shop?category=men" className="relative group overflow-hidden block">
+                <Image
+                  src="/grassland_banner_1_1767749428961.png"
+                  alt="Men's"
+                  fill
                   sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" 
+                  className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-black/20" />
                 <div className="absolute bottom-10 left-10">
                    <h3 className="text-4xl font-black text-white italic uppercase">Men&apos;s Collection</h3>
                    <span className="text-sm font-bold text-white/70 uppercase tracking-widest border-b border-white pb-1">Explore Innovation</span>
                 </div>
-             </div>
+                <div className="absolute inset-0 ring-inset ring-white/0 group-hover:ring-2 group-hover:ring-white/30 transition-all duration-500" />
+             </Link>
              <div className="grid grid-rows-2 gap-8">
-                <div className="relative group overflow-hidden cursor-pointer">
-                   <Image 
-                     src="/grassland_banner_2_1767749443673.png" 
-                     alt="Women's" 
-                     fill 
+                <Link href="/shop?category=women" className="relative group overflow-hidden block">
+                   <Image
+                     src="/grassland_banner_2_1767749443673.png"
+                     alt="Women's"
+                     fill
                      sizes="(max-width: 768px) 100vw, 25vw"
-                     className="object-cover transition-all duration-700 group-hover:scale-105" 
+                     className="object-cover transition-all duration-700 group-hover:scale-105"
                    />
                    <div className="absolute inset-0 bg-black/20" />
                    <div className="absolute bottom-6 left-6">
                       <h3 className="text-2xl font-black text-white italic uppercase">Women&apos;s Apparel</h3>
                    </div>
-                </div>
-                <div className="relative group overflow-hidden cursor-pointer">
-                   <Image 
-                     src="/grassland_banner_3_1767749460228.png" 
-                     alt="Tech" 
-                     fill 
+                   <div className="absolute inset-0 ring-inset ring-white/0 group-hover:ring-2 group-hover:ring-white/30 transition-all duration-500" />
+                </Link>
+                <Link href="/shop?category=tech" className="relative group overflow-hidden block">
+                   <Image
+                     src="/grassland_banner_3_1767749460228.png"
+                     alt="Tech"
+                     fill
                      sizes="(max-width: 768px) 100vw, 25vw"
-                     className="object-cover transition-all duration-700 group-hover:scale-105" 
+                     className="object-cover transition-all duration-700 group-hover:scale-105"
                    />
                    <div className="absolute inset-0 bg-black/20" />
                    <div className="absolute bottom-6 left-6">
                       <h3 className="text-2xl font-black text-white italic uppercase">Sports Tech</h3>
                    </div>
-                </div>
+                   <div className="absolute inset-0 ring-inset ring-white/0 group-hover:ring-2 group-hover:ring-white/30 transition-all duration-500" />
+                </Link>
              </div>
           </div>
         </div>

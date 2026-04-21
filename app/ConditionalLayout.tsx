@@ -20,9 +20,15 @@ export default function ConditionalLayout({
   const pathname = usePathname();
   const isAdminRoute = pathname?.startsWith("/admin");
   const isDashboardRoute = pathname?.startsWith("/dashboard");
+  const isAuthRoute = pathname === "/login" || pathname === "/register";
 
   // Admin routes: no navbar, footer, or modals
   if (isAdminRoute) {
+    return <SessionProvider session={session}>{children}</SessionProvider>;
+  }
+
+  // Auth routes: no navbar, footer, or modals — auth layout handles everything
+  if (isAuthRoute) {
     return <SessionProvider session={session}>{children}</SessionProvider>;
   }
 

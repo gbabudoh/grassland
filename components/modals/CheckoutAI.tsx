@@ -1,277 +1,307 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ShoppingBag, TrendingUp, ShieldCheck, ArrowRight, Cpu, Zap, Hash } from "lucide-react";
+import { 
+  X, 
+  ShoppingBag, 
+  ShieldCheck, 
+  ArrowRight, 
+  Zap, 
+  Truck, 
+  Minus, 
+  Plus,
+  Trash2,
+  Scan,
+  CreditCard
+} from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useModalStore } from "@/store/useModalStore";
 import { useCartStore } from "@/store/useCartStore";
+
+const FREE_SHIPPING_THRESHOLD = 200;
+const SHIPPING_COST = 15;
 
 export default function CheckoutAI() {
   const { isCheckoutAIOpen, closeCheckoutAI } = useModalStore();
   const { items, getTotalPrice, removeItem, updateQuantity } = useCartStore();
   const [isProcessing, setIsProcessing] = useState(false);
-  const router = useRouter(); // Import useRouter
+  const router = useRouter();
 
-  const totalPrice = getTotalPrice();
-  
-  const sentimentMessage = useMemo(() => {
-    if (items.length === 0) return "Your archive is currently empty.";
-    if (totalPrice > 1000) return "A monumental investment in neural excellence.";
-    if (items.some(i => i.isPreOrder)) return "Patience is the ultimate luxury. Your future self thanks you.";
-    return "Refined choices. This selection defines the next era.";
-  }, [items, totalPrice]);
+  const subtotal = getTotalPrice();
+  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
+  const total = subtotal + shipping;
 
   const handleCheckout = () => {
     if (items.length === 0) return;
-    
     setIsProcessing(true);
-    closeCheckoutAI();
-    router.push("/checkout");
-    setIsProcessing(false);
+    // Add a small delay for "aesthetic" processing feel
+    setTimeout(() => {
+      closeCheckoutAI();
+      router.push("/checkout");
+      setIsProcessing(false);
+    }, 800);
   };
 
   return (
     <AnimatePresence mode="wait">
       {isCheckoutAIOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          {/* Backdrop */}
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-6">
+          {/* Advanced Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeCheckoutAI}
-            className="absolute inset-0 bg-white/60 backdrop-blur-xl"
-          >
-            {/* Radial Glow */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.03),transparent_70%)]" />
-          </motion.div>
+            className="absolute inset-0 bg-gh-charcoal/20 backdrop-blur-[12px]"
+          />
 
-          {/* Modal Container */}
+          {/* Holographic Modal Container */}
           <motion.div
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            initial={{ scale: 0.95, opacity: 0, y: 30 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-gh-silver bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)]"
+            exit={{ scale: 0.95, opacity: 0, y: 30 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="relative w-full max-w-4xl overflow-hidden rounded-[32px] border border-white/20 bg-white/80 shadow-[0_32px_120px_rgba(0,0,0,0.15)] md:h-[80vh] flex flex-col md:flex-row"
           >
-            {/* Scanning Line */}
-            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-gh-charcoal/20 to-transparent animate-scan z-10 opacity-30" />
+            {/* Scan line effect */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.03]">
+              <div className="w-full h-[2px] bg-gh-charcoal animate-scan-line" />
+            </div>
 
-            <div className="flex h-[85vh] flex-col md:flex-row">
-              {/* Left Side: Summary & Items */}
-              <div className="flex-1 overflow-y-auto p-8 custom-scrollbar border-r border-gh-silver/50">
-                <div className="mb-8 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gh-off-white">
-                      <ShoppingBag className="h-5 w-5 text-gh-charcoal" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-black uppercase italic tracking-tighter text-gh-charcoal">Neural Bag</h3>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-gh-charcoal">{items.length} Gear Item{items.length !== 1 ? 's' : ''} Collected</p>
-                    </div>
+            {/* Close button */}
+            <button
+              onClick={closeCheckoutAI}
+              className="absolute top-6 right-6 z-50 rounded-2xl p-3 bg-gh-charcoal/5 hover:bg-gh-charcoal hover:text-white transition-all duration-300 cursor-pointer group"
+              aria-label="Close cart"
+            >
+              <X className="h-5 w-5 group-hover:rotate-90 transition-transform duration-500" />
+            </button>
+
+            {/* Left: Cart items section */}
+            <div className="flex-1 overflow-y-auto px-8 py-10 md:p-12">
+              {/* Header */}
+              <header className="mb-12 flex items-center gap-5">
+                <div className="relative flex h-14 w-14 items-center justify-center rounded-[20px] bg-gh-charcoal text-white shadow-xl shadow-gh-charcoal/20">
+                  <ShoppingBag className="h-6 w-6" />
+                  <div className="absolute -top-1 -right-1 h-5 w-5 bg-white border-2 border-gh-charcoal rounded-full flex items-center justify-center">
+                    <span className="text-[10px] font-black text-gh-charcoal">{items.length}</span>
                   </div>
                 </div>
+                <div>
+                  <h3 className="text-3xl font-black uppercase italic tracking-tighter text-gh-charcoal leading-none mb-2">My Cart</h3>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gh-charcoal/40">
+                    G1 Performance Archive
+                  </p>
+                </div>
+              </header>
 
+              {/* Items List */}
+              <div className="space-y-8">
                 {items.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full py-12 text-center relative overflow-hidden">
-                    <motion.div
-                      animate={{ 
-                        scale: [1, 1.1, 1],
-                        rotate: [0, 90, 180, 270, 360],
-                        opacity: [0.3, 0.6, 0.3]
-                      }}
-                      transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                      className="absolute inset-0 flex items-center justify-center -z-10"
-                    >
-                      <div className="h-64 w-64 rounded-full border border-gh-charcoal/[0.05] animate-pulse" />
-                      <div className="absolute h-48 w-48 rounded-full border border-gh-charcoal/[0.02]" />
-                    </motion.div>
-
-                    <div className="relative">
-                      <motion.div
-                        animate={{ y: [0, -10, 0] }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                        className="bg-gh-off-white p-6 rounded-full mb-6 border border-gh-silver shadow-[0_10px_30px_rgba(0,0,0,0.03)]"
-                      >
-                        <Cpu className="h-10 w-10 text-gh-charcoal/40" />
-                      </motion.div>
+                  <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in slide-in-from-bottom-4">
+                    <div className="relative mb-8">
+                      <div className="absolute inset-0 bg-gh-charcoal/5 rounded-full scale-150 blur-2xl" />
+                      <ShoppingBag className="relative h-16 w-16 text-gh-charcoal/20" />
                     </div>
-
-                    <h4 className="text-sm font-black uppercase tracking-[0.3em] text-gh-charcoal mb-2">Neural Link Idle</h4>
-                    <p className="max-w-[240px] text-[10px] font-bold uppercase tracking-widest text-gh-charcoal leading-relaxed mb-8">
-                      Your selection archive is empty. Initiate a selection sequence to begin analysis.
+                    <h4 className="text-lg font-black uppercase tracking-widest text-gh-charcoal mb-3">Your cart is empty</h4>
+                    <p className="max-w-[240px] text-[10px] font-bold uppercase tracking-widest text-gh-charcoal/30 leading-relaxed mb-10">
+                      Explore our latest innovations to begin your performance journey.
                     </p>
-
-                    <button 
+                    <button
                       onClick={() => {
                         closeCheckoutAI();
-                        setTimeout(() => {
-                          window.location.href = "/shop";
-                        }, 500);
+                        setTimeout(() => { window.location.href = "/shop"; }, 300);
                       }}
-                      className="group flex cursor-pointer items-center gap-3 rounded-full border border-gh-silver px-6 py-3 transition-all duration-500 hover:bg-gh-charcoal hover:text-white"
+                      className="group flex cursor-pointer items-center gap-4 rounded-2xl bg-gh-charcoal px-10 py-5 text-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-gh-charcoal/20"
                     >
-                      <Zap className="h-4 w-4 text-gh-charcoal transition-colors group-hover:text-white" />
-                      <span className="pt-0.5 text-[10px] font-black uppercase leading-none tracking-widest">Browse Archive</span>
+                      <Zap className="h-4 w-4" />
+                      <span className="text-[11px] font-black uppercase tracking-widest">Browse Shop</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <AnimatePresence initial={false}>
                     {items.map((item) => (
-                      <motion.div 
+                      <motion.div
                         layout
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
                         key={`${item.id}-${item.size}`}
-                        className="flex gap-4 group relative"
+                        className="flex gap-6 items-center p-4 rounded-3xl hover:bg-gh-charcoal/[0.02] transition-colors group relative"
                       >
-                        <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gh-off-white border border-gh-silver/50 relative">
-                          <Image 
-                            src={item.image} 
-                            alt={item.name} 
+                        {/* Thumbnail */}
+                        <div className="relative h-28 w-28 md:h-32 md:w-32 shrink-0 overflow-hidden rounded-[24px] bg-gh-silver/20 border border-gh-silver/30 shadow-sm">
+                          <Image
+                            src={item.image}
+                            alt={item.name}
                             fill
-                            className="object-cover grayscale brightness-95 group-hover:grayscale-0 transition-all duration-500" 
+                            className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-110"
                           />
                         </div>
-                        <div className="flex flex-1 flex-col justify-between">
-                          <div>
-                            <div className="flex justify-between items-start">
-                              <div className="space-y-1">
-                                <h4 className="text-xs font-black uppercase text-gh-charcoal tracking-widest">{item.name}</h4>
-                                <div className="flex items-center gap-2 opacity-30">
-                                  <Hash className="h-2 w-2 text-gh-charcoal" />
-                                  <span className="text-[8px] font-mono text-gh-charcoal uppercase tracking-widest">
-                                    NRL-{item.id.substring(0, 6).toUpperCase()}
-                                  </span>
-                                </div>
-                              </div>
-                              <button 
-                                onClick={() => removeItem(item.id, item.size)}
-                                className="text-gh-charcoal/40 hover:text-gh-charcoal transition-colors p-1 hover:bg-gh-off-white rounded"
+
+                        {/* Details */}
+                        <div className="flex flex-1 flex-col h-full py-1">
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h4 className="text-sm md:text-base font-black uppercase text-gh-charcoal tracking-tight leading-none mb-1 group-hover:italic transition-all">
+                                {item.name}
+                              </h4>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-gh-charcoal/40">
+                                {item.category} / Size {item.size}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => removeItem(item.id, item.size)}
+                              className="text-gh-charcoal/20 hover:text-red-500 transition-all p-2 hover:bg-red-50 rounded-xl cursor-pointer"
+                              aria-label="Remove item"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                          <div className="flex items-center justify-between mt-auto">
+                            {/* Pro Quantity Selector */}
+                            <div className="flex items-center p-1 bg-gh-silver/10 rounded-[18px] border border-gh-silver/30">
+                              <button
+                                onClick={() => updateQuantity(item.id, item.size, Math.max(1, item.quantity - 1))}
+                                className="flex h-8 w-8 items-center justify-center rounded-2xl bg-white text-gh-charcoal shadow-sm hover:bg-gh-charcoal hover:text-white transition-all cursor-pointer"
                               >
-                                <X className="h-3.5 w-3.5" />
+                                <Minus className="h-3 w-3" />
+                              </button>
+                              <span className="text-xs font-black text-gh-charcoal w-10 text-center">{item.quantity}</span>
+                              <button
+                                onClick={() => updateQuantity(item.id, item.size, item.quantity + 1)}
+                                className="flex h-8 w-8 items-center justify-center rounded-2xl bg-white text-gh-charcoal shadow-sm hover:bg-gh-charcoal hover:text-white transition-all cursor-pointer"
+                              >
+                                <Plus className="h-3 w-3" />
                               </button>
                             </div>
-                            <div className="flex gap-4 mt-3 text-[9px] items-center">
-                              <span className="text-gh-charcoal uppercase tracking-[0.2em]">{item.category} / US {item.size}</span>
-                              {item.isPreOrder && (
-                                <span className="text-[8px] text-gh-charcoal px-2 py-0.5 bg-gh-off-white rounded-full font-black tracking-widest border border-gh-silver">PRE-ORDER</span>
-                              )}
+                            <div className="text-right">
+                              <span className="text-lg font-black text-gh-charcoal italic tracking-tighter">
+                                ${(item.price * item.quantity).toLocaleString()}
+                              </span>
                             </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                             <div className="flex items-center gap-3 border border-gh-silver rounded-full px-2 py-1">
-                                <button 
-                                  onClick={() => updateQuantity(item.id, item.size, Math.max(1, item.quantity - 1))}
-                                  className="text-gh-charcoal hover:opacity-70"
-                                >-</button>
-                                <span className="text-[10px] font-black text-gh-charcoal">{item.quantity}</span>
-                                <button 
-                                  onClick={() => updateQuantity(item.id, item.size, item.quantity + 1)}
-                                  className="text-gh-charcoal hover:opacity-70"
-                                >+</button>
-                             </div>
-                             <span className="text-xs font-black text-gh-charcoal">${(item.price * item.quantity).toLocaleString()}</span>
                           </div>
                         </div>
                       </motion.div>
                     ))}
-                  </div>
+                  </AnimatePresence>
                 )}
               </div>
 
-              {/* Right Side: AI Sentiment & Checkout */}
-              <div className="w-full md:w-[320px] bg-gh-off-white/30 p-8 flex flex-col justify-between border-l border-gh-silver/50 relative overflow-hidden">
-                {/* Background Ambient Glow */}
-                <div className="absolute top-0 right-0 h-32 w-32 bg-gh-charcoal/[0.02] blur-[50px] rounded-full -translate-y-1/2 translate-x-1/2" />
-                
-                <div className="relative z-10">
-                   <div className="mb-10 space-y-3">
-                    <div className="flex items-center gap-2">
-                       <span className="h-1.5 w-1.5 rounded-full bg-gh-charcoal animate-pulse" />
-                       <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-gh-charcoal">AI Analysis</h4>
-                    </div>
-                    <motion.p 
-                      key={sentimentMessage}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="text-sm font-bold text-gh-charcoal italic leading-relaxed group selection:bg-gh-charcoal selection:text-white"
-                    >
-                      &ldquo;{sentimentMessage}&rdquo;
-                    </motion.p>
-                  </div>
+              {/* Continue Shopping Footer */}
+              {items.length > 0 && (
+                <div className="mt-12 pt-8 border-t border-gh-charcoal/5">
+                  <button
+                    onClick={closeCheckoutAI}
+                    className="text-[10px] font-black uppercase tracking-[0.2em] text-gh-charcoal/40 hover:text-gh-charcoal transition-all flex items-center gap-3 cursor-pointer group"
+                  >
+                    <ArrowRight className="h-4 w-4 rotate-180 group-hover:-translate-x-2 transition-transform" />
+                    Continue Curating Archive
+                  </button>
+                </div>
+              )}
+            </div>
 
-                  <div className="space-y-5 pt-8 border-t border-gh-silver/50">
-                    <div className="flex items-center justify-between group cursor-help">
-                      <div className="flex items-center gap-3 text-gh-charcoal group-hover:opacity-80 transition-colors">
-                        <TrendingUp className="h-3.5 w-3.5" />
-                        <span className="text-[9px] font-bold uppercase tracking-[0.2em]">Market Value</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="relative flex h-1.5 w-1.5">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gh-charcoal opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-gh-charcoal"></span>
-                        </span>
-                        <span className="text-[8px] font-black text-gh-charcoal uppercase tracking-widest bg-gh-off-white px-2 py-0.5 rounded leading-none">Active</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between group cursor-help">
-                      <div className="flex items-center gap-3 text-gh-charcoal group-hover:opacity-80 transition-colors">
-                        <ShieldCheck className="h-3.5 w-3.5" />
-                        <span className="text-[9px] font-bold uppercase tracking-[0.2em]">Neural Encryption</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-1 w-1 rounded-full bg-gh-charcoal/40" />
-                        <span className="text-[8px] font-black text-gh-charcoal uppercase tracking-widest bg-gh-off-white px-2 py-0.5 rounded leading-none">On</span>
-                      </div>
-                    </div>
-                  </div>
+            {/* Right: Premium Summary Section */}
+            <div className="w-full md:w-[360px] bg-gh-charcoal p-10 md:p-12 flex flex-col justify-between relative overflow-hidden">
+              {/* Decoration background */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/[0.02] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+              
+              <div className="relative z-10 space-y-10">
+                <div className="flex items-center gap-3 opacity-30">
+                  <Scan className="h-4 w-4 text-white" />
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-white">
+                    Summary
+                  </h4>
                 </div>
 
-                <div className="space-y-8 relative z-10">
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-[10px] uppercase tracking-[0.2em] text-gh-charcoal">
-                      <span>Neural Inventory</span>
-                      <span className="text-gh-charcoal">${totalPrice.toLocaleString()}</span>
+                <div className="space-y-6">
+                  {/* Costs */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-[11px] uppercase tracking-widest text-white/40">
+                      <span>Subtotal</span>
+                      <span className="font-black text-white">${subtotal.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-[10px] uppercase tracking-[0.2em] text-gh-charcoal">
-                      <span>Secure Transmission</span>
-                      <span className="text-gh-charcoal">SECURED</span>
-                    </div>
-                    <div className="flex justify-between border-t border-gh-silver pt-6">
-                      <div className="flex flex-col">
-                         <span className="text-[9px] font-black uppercase tracking-[0.4em] text-gh-charcoal mb-1">Total Gear</span>
-                         <span className="text-2xl font-black italic text-gh-charcoal tracking-tighter leading-none">${totalPrice.toLocaleString()}</span>
-                      </div>
+
+                    <div className="flex justify-between text-[11px] uppercase tracking-widest text-white/40">
+                      <span className="flex items-center gap-2">
+                        <Truck className="h-3 w-3" />
+                        Shipping
+                      </span>
+                      {subtotal === 0 ? (
+                        <span className="font-black text-white/20">—</span>
+                      ) : shipping === 0 ? (
+                        <span className="font-black text-green-400">Complimentary</span>
+                      ) : (
+                        <span className="font-black text-white">${SHIPPING_COST}</span>
+                      )}
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <button
-                      disabled={items.length === 0 || isProcessing}
-                      onClick={handleCheckout}
-                      className="relative w-full group overflow-hidden bg-[#706d6d] py-5 text-xs font-black uppercase tracking-[0.4em] text-white transition-all hover:bg-black disabled:grayscale cursor-pointer disabled:cursor-not-allowed"
-                    >
-                      <span className="relative z-10 flex items-center justify-center gap-3 pt-0.5">
-                        {isProcessing ? "Initializing..." : "Initiate Checkout"}
-                        {!isProcessing && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
-                      </span>
-                    </button>
+                  {/* Threshold Nudge */}
+                  {subtotal > 0 && subtotal < FREE_SHIPPING_THRESHOLD && (
+                    <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                      <p className="text-[9px] font-black text-white/60 uppercase tracking-[0.2em] leading-relaxed">
+                        Add <span className="text-white">${FREE_SHIPPING_THRESHOLD - subtotal}</span> for Complimentary Express Shipping
+                      </p>
+                    </div>
+                  )}
 
-                    <p className="text-center text-[8px] font-bold uppercase tracking-[0.3em] text-gh-charcoal">
-                       Encrypted Transaction via Stripe Protocol 2.0
-                    </p>
+                  {/* Divider + Final Total */}
+                  <div className="pt-8 border-t border-white/10">
+                    <div className="flex justify-between items-end mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/40">Final Total</span>
+                      <span className="text-4xl font-black italic text-white tracking-tighter leading-none">
+                        ${total.toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-[8px] font-black uppercase tracking-widest text-white/20">Authorized Transaction</p>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Close Button overlay for mobile/small screens */}
-            <button
-              onClick={closeCheckoutAI}
-              className="absolute top-4 right-4 md:hidden rounded-full p-2 text-gh-charcoal transition-colors hover:bg-gh-off-white"
-            >
-              <X className="h-5 w-5" />
-            </button>
+              {/* Action Area */}
+              <div className="relative z-10 space-y-5 mt-12">
+                <button
+                  disabled={items.length === 0 || isProcessing}
+                  onClick={handleCheckout}
+                  className="w-full group relative overflow-hidden flex items-center justify-center gap-4 bg-white text-gh-charcoal py-6 rounded-[24px] font-black uppercase tracking-[0.3em] text-xs hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer shadow-2xl shadow-black/20"
+                >
+                  {isProcessing ? (
+                    <div className="flex items-center gap-3">
+                      <div className="h-4 w-4 border-2 border-gh-charcoal/20 border-t-gh-charcoal rounded-full animate-spin" />
+                      Initializing...
+                    </div>
+                  ) : (
+                    <>
+                      <CreditCard className="h-4 w-4" />
+                      Initialize Payment
+                      <ArrowRight className="h-4 w-4 group-hover:translate-x-2 transition-transform duration-500" />
+                    </>
+                  )}
+                </button>
+
+                <div className="flex flex-col items-center gap-4">
+                  <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-full border border-white/5">
+                    <ShieldCheck className="h-3 w-3 text-green-400" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40">Secure Stripe Encryption</span>
+                  </div>
+                  
+                  {items.length === 0 && (
+                    <button
+                      onClick={closeCheckoutAI}
+                      className="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-colors underline underline-offset-8"
+                    >
+                      Return to Archive
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
           </motion.div>
         </div>
       )}

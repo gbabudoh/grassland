@@ -32,14 +32,14 @@ export default function CookieConsent() {
             <Cookie className="h-6 w-6" />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-gh-charcoal uppercase tracking-tight mb-2">Cookie Protocol</h3>
+            <h3 className="font-bold text-gh-charcoal uppercase tracking-tight mb-2">We use cookies</h3>
             <p className="text-sm text-gh-charcoal/60 leading-relaxed font-medium">
-              We use cookies to synchronize your innovation lab telemetry and optimize the Grassland shop experience.
+              We use cookies to remember your preferences and improve your experience on the Grassland store.
             </p>
           </div>
           <button 
             onClick={() => setIsVisible(false)}
-            className="text-gh-charcoal/20 hover:text-gh-charcoal transition-colors pt-1"
+            className="text-gh-charcoal/20 hover:text-gh-charcoal transition-colors pt-1 cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -48,22 +48,22 @@ export default function CookieConsent() {
         <div className="flex flex-col gap-3">
           <button
             onClick={() => handleConsent("all")}
-            className="w-full flex items-center justify-center gap-2 bg-gh-charcoal text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-95 transition-all"
+            className="w-full flex items-center justify-center gap-2 bg-gh-charcoal text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
           >
             <CheckCircle2 className="h-4 w-4" />
-            Accept All Protocol
+            Accept All Cookies
           </button>
           
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => handleConsent("essential")}
-              className="px-4 py-4 border border-gh-charcoal/10 text-gh-charcoal/60 rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-gh-charcoal/5 transition-all text-center"
+              className="px-4 py-4 border border-gh-charcoal/10 text-gh-charcoal/60 rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-gh-charcoal/5 transition-all text-center cursor-pointer"
             >
               Essential Only
             </button>
             <Link
               href="/cookie-policy"
-              className="px-4 py-4 border border-gh-charcoal/10 text-gh-charcoal/60 rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-gh-charcoal/5 transition-all text-center flex items-center justify-center"
+              className="px-4 py-4 border border-gh-charcoal/10 text-gh-charcoal/60 rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-gh-charcoal/5 transition-all text-center flex items-center justify-center cursor-pointer"
             >
               Learn More
             </Link>

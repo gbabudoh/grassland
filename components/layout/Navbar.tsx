@@ -9,56 +9,103 @@ import { useCartStore } from "@/store/useCartStore";
 import { useSession, signOut } from "next-auth/react";
 
 const navItems = [
-  { 
-    name: "Men", 
+  {
+    name: "Men",
+    viewAllHref: "/shop?category=men",
     sections: [
       {
         title: "Trends",
-        items: ["Summer Pulse", "Cross-Breed Era", "Carbon Pulse", "Neon Velocity"]
+        items: [
+          { label: "Summer Pulse",    href: "/shop?category=men" },
+          { label: "Cross-Breed Era", href: "/shop?category=men" },
+          { label: "Carbon Pulse",    href: "/shop?category=men&q=Carbon" },
+          { label: "Neon Velocity",   href: "/shop?category=men&q=Velocity" },
+        ],
       },
       {
         title: "Versions",
-        items: ["G1 Series", "Elite Pro", "Tech-Labs", "Heritage Core"]
+        items: [
+          { label: "G1 Series",      href: "/shop/g1-performance-matrix" },
+          { label: "Elite Pro",      href: "/shop?category=men" },
+          { label: "Tech-Labs",      href: "/innovation" },
+          { label: "Heritage Core",  href: "/shop?category=men" },
+        ],
       },
       {
         title: "Shoe Names",
-        items: ["Velocity X", "Carbon Pro", "Neural 1", "Terra Form", "Deep Cloud"]
-      }
-    ]
+        items: [
+          { label: "Velocity X",  href: "/shop?category=men&q=Velocity" },
+          { label: "Carbon Pro",  href: "/shop?category=men&q=Carbon" },
+          { label: "Neural 1",    href: "/shop?category=men&q=Neural" },
+          { label: "Terra Form",  href: "/shop?category=men" },
+          { label: "Deep Cloud",  href: "/shop?category=men" },
+        ],
+      },
+    ],
   },
-  { 
-    name: "Women", 
+  {
+    name: "Women",
+    viewAllHref: "/shop?category=women",
     sections: [
       {
         title: "Trends",
-        items: ["Pulse Series", "Eco-Active", "Aura Glow", "Zenith"]
+        items: [
+          { label: "Pulse Series", href: "/shop?category=women" },
+          { label: "Eco-Active",   href: "/shop?category=women" },
+          { label: "Aura Glow",    href: "/shop?category=women" },
+          { label: "Zenith",       href: "/shop?category=women" },
+        ],
       },
       {
         title: "Versions",
-        items: ["G1 Series", "Luna Pro", "Active Flow", "Swift Core"]
+        items: [
+          { label: "G1 Series",    href: "/shop/g1-performance-matrix" },
+          { label: "Luna Pro",     href: "/shop?category=women" },
+          { label: "Active Flow",  href: "/shop?category=women" },
+          { label: "Swift Core",   href: "/shop?category=women" },
+        ],
       },
       {
         title: "Shoe Names",
-        items: ["Nebula 1", "Flow Edge", "Aether X", "Gaia Pro", "Prism"]
-      }
-    ]
+        items: [
+          { label: "Nebula 1",  href: "/shop?category=women" },
+          { label: "Flow Edge", href: "/shop?category=women" },
+          { label: "Aether X",  href: "/shop?category=women" },
+          { label: "Gaia Pro",  href: "/shop?category=women" },
+          { label: "Prism",     href: "/shop?category=women" },
+        ],
+      },
+    ],
   },
-  { 
-    name: "Kids", 
+  {
+    name: "Kids",
+    viewAllHref: "/shop?category=kids",
     sections: [
       {
         title: "Trends",
-        items: ["Jump Force", "Glow Tech", "Future Star"]
+        items: [
+          { label: "Jump Force",   href: "/shop?category=kids" },
+          { label: "Glow Tech",    href: "/shop?category=kids" },
+          { label: "Future Star",  href: "/shop?category=kids" },
+        ],
       },
       {
         title: "Versions",
-        items: ["G1 Junior", "Mini Pro", "Playground Core"]
+        items: [
+          { label: "G1 Junior",        href: "/shop?category=kids" },
+          { label: "Mini Pro",         href: "/shop?category=kids" },
+          { label: "Playground Core",  href: "/shop?category=kids" },
+        ],
       },
       {
         title: "Shoe Names",
-        items: ["Junior X", "Little Pulse", "Spark 1"]
-      }
-    ]
+        items: [
+          { label: "Junior X",     href: "/shop?category=kids" },
+          { label: "Little Pulse", href: "/shop?category=kids" },
+          { label: "Spark 1",      href: "/shop?category=kids" },
+        ],
+      },
+    ],
   },
 ];
 
@@ -155,13 +202,14 @@ export default function Navbar() {
                       </h4>
                       <div className="flex flex-col gap-3">
                         {section.items.map((subItem) => (
-                          <Link 
-                            key={subItem} 
-                            href="/shop" 
+                          <Link
+                            key={subItem.label}
+                            href={subItem.href}
+                            onClick={() => setActiveDropdown(null)}
                             className="group/item flex items-center text-xs font-bold uppercase tracking-wider text-gh-charcoal/70 hover:text-gh-charcoal transition-all"
                           >
                             <span className="h-[1px] w-0 bg-gh-charcoal group-hover/item:w-3 transition-all mr-0 group-hover/item:mr-2" />
-                            {subItem}
+                            {subItem.label}
                           </Link>
                         ))}
                       </div>
@@ -170,7 +218,13 @@ export default function Navbar() {
                 </div>
                 <div className="bg-gh-off-white/50 p-6 flex justify-between items-center border-t border-gh-silver/30">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-gh-charcoal/50 italic">Grassland Innovation Labs</span>
-                  <Link href="/shop" className="text-[10px] font-black uppercase tracking-widest text-gh-charcoal border-2 border-gh-charcoal px-4 py-2 hover:bg-gh-charcoal hover:text-white transition-all">View All</Link>
+                  <Link
+                    href={item.viewAllHref}
+                    onClick={() => setActiveDropdown(null)}
+                    className="text-[10px] font-black uppercase tracking-widest text-gh-charcoal border-2 border-gh-charcoal px-4 py-2 hover:bg-gh-charcoal hover:text-white transition-all"
+                  >
+                    View All
+                  </Link>
                 </div>
               </div>
             </div>

@@ -48,8 +48,12 @@ export async function POST(req: Request) {
       amount: amount
     });
   } catch (error: unknown) {
-    console.error("[PAYMENT_INTENT_ERROR]", error);
-    const message = error instanceof Error ? error.message : "Internal Server Error";
+    const err = error as { 
+      message?: string; 
+    };
+    
+    console.error("[PAYMENT_INTENT_ERROR]", err.message);
+    const message = err.message || "Internal Server Error";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

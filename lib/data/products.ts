@@ -38,12 +38,9 @@ export const PRODUCTS: Product[] = [
     gallery: [
       { type: "image", url: "/grassland_banner_2_1767749443673.png" },
       { type: "3d", url: "3d-model" },
-      { type: "video", url: "https://www.w3schools.com/html/mov_bbb.mp4" },
+      { type: "video", url: "https://assets.mixkit.co/videos/preview/mixkit-athlete-training-on-the-running-track-40019-large.mp4" },
       { type: "image", url: "/grassland_banner_1_1767749428961.png" },
       { type: "image", url: "/grassland_banner_3_1767749460228.png" },
-      { type: "image", url: "/grassland_banner_2_1767749443673.png" },
-      { type: "image", url: "/grassland_banner_1_1767749428961.png" },
-      { type: "image", url: "/grassland_banner_3_1767749460228.png" }
     ],
     insights: "Optimized for high-torque energy return. Neural link stable at peak velocity.",
     tags: ["Carbon Fiber", "Bio-Tech", "Pro"],
@@ -70,7 +67,7 @@ export const PRODUCTS: Product[] = [
     gallery: [
       { type: "image", url: "/grassland_banner_1_1767749428961.png" },
       { type: "3d", url: "3d-model" },
-      { type: "video", url: "https://www.w3schools.com/html/mov_bbb.mp4" },
+      { type: "video", url: "https://assets.mixkit.co/videos/preview/mixkit-sprinter-crossing-the-finish-line-of-a-race-track-32829-large.mp4" },
       { type: "image", url: "/grassland_banner_2_1767749443673.png" }
     ],
     insights: "Maximum silence. Zero thermal signature detection. Ultra-low profile.",
@@ -118,7 +115,7 @@ export const PRODUCTS: Product[] = [
     image: "/grassland_banner_1_1767749428961.png",
     gallery: [
       { type: "image", url: "/grassland_banner_1_1767749428961.png" },
-      { type: "video", url: "https://www.w3schools.com/html/movie.mp4" },
+      { type: "video", url: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-running-in-the-city-32830-large.mp4" },
       { type: "image", url: "/grassland_banner_3_1767749460228.png" }
     ],
     insights: "Real-time biometric monitoring and archive sync. Grade 5 titanium chassis.",
