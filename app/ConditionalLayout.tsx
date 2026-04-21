@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import SizeAI from "@/components/modals/SizeAI";
 import CheckoutAI from "@/components/modals/CheckoutAI";
 import SearchModal from "@/components/layout/SearchModal";
+import CookieConsent from "@/components/layout/CookieConsent";
 import { SessionProvider } from "next-auth/react";
 import { Session } from "next-auth";
 
@@ -33,6 +34,7 @@ export default function ConditionalLayout({
         <SizeAI />
         <CheckoutAI />
         <SearchModal />
+        <CookieConsent />
         {children}
       </SessionProvider>
     );
@@ -45,6 +47,7 @@ export default function ConditionalLayout({
       <SizeAI />
       <CheckoutAI />
       <SearchModal />
+      <CookieConsent />
       {children}
       <Footer />
     </SessionProvider>

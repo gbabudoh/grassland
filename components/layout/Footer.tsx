@@ -121,9 +121,9 @@ export default function Footer() {
             © {new Date().getFullYear()} Grassland Global S.A. All Rights Reserved.
           </div>
           <div className="flex gap-8">
-             <Link href="#" className="text-[10px] font-black uppercase tracking-widest text-white/50 hover:text-white">Privacy Policy</Link>
-             <Link href="#" className="text-[10px] font-black uppercase tracking-widest text-white/50 hover:text-white">Terms of Sale</Link>
-             <Link href="#" className="text-[10px] font-black uppercase tracking-widest text-white/50 hover:text-white">Accessibility</Link>
+             <Link href="/privacy" className="text-[10px] font-black uppercase tracking-widest text-white/50 hover:text-white">Privacy Policy</Link>
+             <Link href="/terms" className="text-[10px] font-black uppercase tracking-widest text-white/50 hover:text-white">Terms of Service</Link>
+             <Link href="/cookie-policy" className="text-[10px] font-black uppercase tracking-widest text-white/50 hover:text-white">Cookie Policy</Link>
           </div>
         </div>
       </div>

@@ -66,6 +66,31 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-white pt-32 pb-20 px-6 sm:px-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": product.name,
+            "image": [product.gallery[0]?.url],
+            "description": product.insights || product.name,
+            "sku": product.id,
+            "brand": {
+              "@type": "Brand",
+              "name": "Grassland"
+            },
+            "offers": {
+              "@type": "Offer",
+              "url": `https://grassland.com/shop/${product.id}`,
+              "priceCurrency": "USD",
+              "price": product.price,
+              "availability": product.isPreOrder ? "https://schema.org/PreOrder" : "https://schema.org/InStock",
+              "itemCondition": "https://schema.org/NewCondition"
+            }
+          })
+        }}
+      />
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumbs & Back */}
         <Link 

@@ -3,10 +3,19 @@ import { stripe } from "@/lib/stripe";
 import { db } from "@/db";
 import { orders, orderItems } from "@/db/schema";
 import { CartItem } from "@/store/useCartStore";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function POST(req: Request) {
   try {
     const { items, userId } = await req.json();
+
+    const authSession = await getServerSession(authOptions);
+
+    // SECURITY: Verify that if a userId is provided (and not guest), it matches the session.
+    if (userId && userId !== "guest" && (!authSession || authSession.user.id !== userId)) {
+      return new NextResponse("Unauthorized: User ID mismatch or session missing", { status: 401 });
+    }
 
     if (!items || items.length === 0) {
       return new NextResponse("No items in cart", { status: 400 });
