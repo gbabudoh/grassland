@@ -3,7 +3,8 @@ import { headers } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/db";
 import { eq, sql } from "drizzle-orm";
-import { orders, orderItems } from "@/db/schema";
+import { orders, orderItems, users, activityLogs } from "@/db/schema";
+import { calculateRank } from "@/lib/fame/utils";
 import Stripe from "stripe";
 
 export async function POST(req: Request) {
@@ -56,12 +57,40 @@ export async function POST(req: Request) {
             .where(eq(orderItems.orderId, updatedOrder.id));
 
           // 3. Decrement Stock for each item
-          // Note: Only decrement if it's not a pre-order, or handle pre-order stock differently if needed
           for (const item of items) {
-            // We use sql to perform atomic decrement
             await tx.execute(
               sql`UPDATE products SET stock = stock - ${item.quantity} WHERE id = ${item.productId}`
             );
+          }
+
+          // 4. Award Fame Points
+          if (updatedOrder.userId) {
+            const [user] = await tx
+              .select()
+              .from(users)
+              .where(eq(users.id, updatedOrder.userId))
+              .limit(1);
+
+            if (user) {
+              const basePoints = 100; // Bonus for purchase
+              const valuePoints = Math.floor(Number(updatedOrder.totalAmount));
+              const totalAwarded = basePoints + valuePoints;
+              
+              const newTotalPoints = user.famePoints + totalAwarded;
+              const newRank = calculateRank(newTotalPoints);
+
+              await tx.update(users).set({
+                famePoints: newTotalPoints,
+                fameRank: newRank,
+                updatedAt: new Date(),
+              }).where(eq(users.id, user.id));
+
+              await tx.insert(activityLogs).values({
+                userId: user.id,
+                action: "PURCHASE",
+                pointsAwarded: totalAwarded,
+              });
+            }
           }
         });
       } catch (error) {

@@ -1,282 +1,187 @@
-"use client";
-
-import { useState, useRef, useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Points, PointMaterial, OrbitControls, Float, Html } from "@react-three/drei";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, ChevronRight, User, ShieldCheck } from "lucide-react";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { desc, count, eq, gt } from "drizzle-orm";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import FameSearch from "@/components/fame/FameSearch";
+import LeaderboardList, { LeaderboardUser } from "@/components/fame/LeaderboardList";
+import ConstellationBackground from "@/components/fame/ConstellationBackground";
+import DailyRewardPopup from "@/components/fame/DailyRewardPopup";
+import { Trophy, Users, Zap, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import * as THREE from "three";
+import { generateFameCode } from "@/lib/fame/utils";
 
-interface Member {
-  id: string;
-  name: string;
-  tier: string;
-  rank: number;
-  gear: string[];
-  position: THREE.Vector3;
-}
+export const revalidate = 3600; // Cache for 1 hour
 
-// --- MOCK DATA FOR FN MEMBER NODES ---
-// In production, this would fetch from the `users` table where isFnMember = true
-const MOCK_MEMBERS: Member[] = Array.from({ length: 50 }).map((_, i) => ({
-  id: `fn-${i}`,
-  name: i === 0 ? "Dr. Godwin" : `Member ${i}`,
-  tier: i === 0 ? "ARCHITECT" : i < 10 ? "ELITE" : "PIONEER",
-  rank: i + 1,
-  gear: ["G1 Pro", "Neural Hoodie"],
-  // Assign random 3D position on a sphere surface roughly
-  position: new THREE.Vector3(
-    (Math.random() - 0.5) * 10, 
-    (Math.random() - 0.5) * 10, 
-    (Math.random() - 0.5) * 10
-  ).normalize().multiplyScalar(4 + Math.random() * 2) 
-}));
-
-// Helper to generate random points in a sphere
-function generateSpherePoints(count: number, radius: number) {
-  const points = new Float32Array(count * 3);
-  for (let i = 0; i < count; i++) {
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(2 * Math.random() - 1);
-    const r = Math.cbrt(Math.random()) * radius;
-
-    const x = r * Math.sin(phi) * Math.cos(theta);
-    const y = r * Math.sin(phi) * Math.sin(theta);
-    const z = r * Math.cos(phi);
-
-    points[i * 3] = x;
-    points[i * 3 + 1] = y;
-    points[i * 3 + 2] = z;
-  }
-  return points;
-}
-
-function Constellation({ onSelectNode }: { onSelectNode: (node: Member) => void }) {
-  const ref = useRef<THREE.Points>(null!);
+export default async function FameNetworkPage() {
+  const session = await getServerSession(authOptions);
   
-  // Generate 3000 background stars
-  const sphere = useMemo(() => {
-     return generateSpherePoints(3000, 12);
-  }, []);
+  // Parallel fetch for dashboard data
+  const [topLeadersRows, totalMembers, currentUser] = await Promise.all([
+    db.query.users.findMany({
+      where: gt(users.famePoints, 0),
+      orderBy: [desc(users.famePoints)],
+      limit: 5,
+    }),
+    db.select({ value: count() }).from(users),
+    session?.user?.id ? db.query.users.findFirst({ where: eq(users.id, session.user.id) }) : null
+  ]);
 
-  useFrame((state, delta) => {
-    if (ref.current) {
-      ref.current.rotation.x -= delta / 15;
-      ref.current.rotation.y -= delta / 20;
-    }
-  });
+  // Auto-generate fame code if missing or invalid (e.g. stored as literal "null")
+  const isValidFameCode = (code: string | null | undefined) =>
+    !!code && code.startsWith("G-FAME-");
 
-  return (
-    <group rotation={[0, 0, Math.PI / 4]}>
-      {/* Background Starfield */}
-      <Points ref={ref} positions={sphere} stride={3} frustumCulled={false}>
-        <PointMaterial
-          transparent
-          color="#ffffff"
-          size={0.02}
-          sizeAttenuation={true}
-          depthWrite={false}
-          opacity={0.4}
-        />
-      </Points>
-      
-      {/* Interactive Member Nodes */}
-      {MOCK_MEMBERS.map((member) => (
-         <MemberNode key={member.id} member={member} onClick={() => onSelectNode(member)} />
-      ))}
-    </group>
-  );
-}
+  let displayUser = currentUser;
+  if (currentUser && !isValidFameCode(currentUser.fameCode)) {
+    const newCode = generateFameCode(currentUser.id);
+    await db.update(users).set({ 
+        fameCode: newCode,
+        updatedAt: new Date()
+    }).where(eq(users.id, currentUser.id));
+    displayUser = { ...currentUser, fameCode: newCode };
+  }
 
-function MemberNode({ member, onClick }: { member: Member, onClick: () => void }) {
-   const [hovered, setHovered] = useState(false);
-   
-   // Color based on tier
-   const color = member.tier === "ARCHITECT" ? "#FFD700" : member.tier === "ELITE" ? "#00FFAB" : "#FFFFFF";
-   const size = member.tier === "ARCHITECT" ? 0.3 : member.tier === "ELITE" ? 0.15 : 0.08;
-
-   return (
-      <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
-         <mesh 
-            position={member.position} 
-            onClick={(e) => { e.stopPropagation(); onClick(); }}
-            onPointerOver={() => setHovered(true)}
-            onPointerOut={() => setHovered(false)}
-         >
-            <sphereGeometry args={[size, 16, 16]} />
-            <meshStandardMaterial 
-               color={color} 
-               emissive={color}
-               emissiveIntensity={hovered ? 4 : 2}
-               toneMapped={false}
-            />
-            {/* Label only visible on hover or if Architect */}
-            {(hovered || member.tier === "ARCHITECT") && (
-               <Html distanceFactor={10}>
-                  <div className="bg-black/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 pointer-events-none transform -translate-x-1/2 -translate-y-8 min-w-max">
-                     <span className="text-[8px] font-black uppercase tracking-widest text-white whitespace-nowrap">
-                        {member.name}
-                     </span>
-                  </div>
-               </Html>
-            )}
-         </mesh>
-      </Float>
-   );
-}
-
-
-export default function FameNetworkPage() {
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const handleSearch = (e: React.FormEvent) => {
-     e.preventDefault();
-     // Simple client-side search simulation
-     const found = MOCK_MEMBERS.find(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()));
-     if (found) setSelectedMember(found);
-  };
+  const topLeaders = topLeadersRows as LeaderboardUser[];
 
   return (
-    <div className="relative w-full h-screen bg-black overflow-hidden">
-      
-      {/* 3D Canvas */}
-      <div className="absolute inset-0 z-0">
-         <Canvas camera={{ position: [0, 0, 10], fov: 45 }}>
-            <fog attach="fog" args={['black', 5, 25]} />
-            <ambientLight intensity={0.5} />
-            <pointLight position={[10, 10, 10]} intensity={1} color="#ffffff" />
-            <Constellation onSelectNode={setSelectedMember} />
-            <OrbitControls enableZoom={true} enablePan={false} autoRotate autoRotateSpeed={0.5} minDistance={2} maxDistance={20} />
-         </Canvas>
-      </div>
+    <div className="relative min-h-screen bg-black text-white overflow-hidden selection:bg-yellow-500 selection:text-black">
+      <ConstellationBackground />
+      {displayUser && <DailyRewardPopup userId={displayUser.id} />}
 
-      {/* UI Overlay */}
-      <div className="absolute inset-0 z-10 pointer-events-none">
-         {/* Top Bar */}
-         <div className="absolute top-0 w-full p-8 md:p-12 flex justify-between items-start pointer-events-auto">
-            <div>
-               <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 1 }}
-               >
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/50 block mb-2">
-                     Grassland Ecosystem
-                  </span>
-                  <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-white leading-none">
-                     Fame <br /> Network
-                  </h1>
-               </motion.div>
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 px-8 z-10">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 animate-fade-in">
+            <Zap className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">Neural Loyalty Protocol v2.0</span>
+          </div>
+          
+          <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter italic leading-[0.9] mb-8">
+            The Fame <br /> <span className="text-yellow-500">Network</span>
+          </h1>
+          
+          <p className="max-w-2xl mx-auto text-white/40 text-sm md:text-base leading-relaxed mb-12">
+            Establish your legacy in the Grassland Ecosystem. Track your performance, 
+            unlock exclusive gear, and climb the global leaderboard to become a Legend.
+          </p>
+
+          <FameSearch />
+        </div>
+      </section>
+
+      {/* Stats Grid */}
+      <section className="relative py-20 px-8 z-10 border-t border-white/5 bg-black/40 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Global Reach */}
+            <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/10 group hover:border-yellow-500/30 transition-all">
+              <Users className="w-10 h-10 text-white/20 mb-6 group-hover:text-yellow-500 transition-colors" />
+              <h3 className="text-4xl font-black tracking-tighter mb-1">{(totalMembers[0]?.value || 0).toLocaleString()}</h3>
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/30">Active Nodes Connected</p>
             </div>
 
-            {/* Search Bar */}
-            <motion.form 
-               onSubmit={handleSearch}
-               initial={{ opacity: 0, x: 20 }}
-               animate={{ opacity: 1, x: 0 }}
-               transition={{ duration: 1, delay: 0.2 }}
-               className="relative group"
-            >
-               <input 
-                  type="text" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="LOCATE SIGNAL ID..."
-                  className="w-48 md:w-64 bg-white/5 border border-white/20 rounded-full py-3 pl-5 pr-12 text-[10px] font-black uppercase tracking-widest text-white placeholder:text-white/30 focus:outline-none focus:border-white/60 focus:bg-black/50 transition-all backdrop-blur-md"
-               />
-               <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-white/10 rounded-full flex items-center justify-center text-white/60 hover:bg-white hover:text-black transition-all">
-                  <Search className="h-4 w-4" />
-               </button>
-            </motion.form>
-         </div>
-
-         {/* Member Profile Sidebar */}
-         <AnimatePresence>
-            {selectedMember && (
-               <motion.div
-                  initial={{ x: "100%", opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: "100%", opacity: 0 }}
-                  transition={{ type: "spring", damping: 30 }}
-                  className="absolute right-0 top-0 h-full w-full md:w-96 bg-black/80 backdrop-blur-xl border-l border-white/10 p-8 md:p-12 pointer-events-auto flex flex-col pt-32"
-               >
-                  <button 
-                     onClick={() => setSelectedMember(null)}
-                     className="absolute top-8 left-8 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+            {/* User Personal Hub or Call to Action */}
+            <div className="md:col-span-2 p-8 rounded-[2.5rem] bg-gradient-to-br from-yellow-500/20 to-transparent border border-yellow-500/20 flex flex-col md:flex-row items-center justify-between gap-8">
+              {displayUser ? (
+                <>
+                  <div className="flex items-center gap-6">
+                    <div className="w-20 h-20 rounded-full bg-yellow-500 flex items-center justify-center text-3xl shadow-[0_0_40px_rgba(234,179,8,0.3)]">
+                      {displayUser.name?.[0] || "G"}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-yellow-500 mb-1">Authenticated Member</p>
+                      <h3 className="text-3xl font-black uppercase italic tracking-tighter">{displayUser.name}</h3>
+                      <div className="flex items-center gap-4 mt-2">
+                        <span className="text-xs font-bold text-white/60">{displayUser.famePoints.toLocaleString()} GF</span>
+                        <div className="h-1 w-1 rounded-full bg-white/20" />
+                        <span className="text-xs font-bold text-yellow-500">{displayUser.fameRank}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {isValidFameCode(displayUser.fameCode) ? (
+                    <Link 
+                        href={`/fame-network/${displayUser.fameCode}`}
+                        className="px-8 py-4 bg-white text-black font-black rounded-2xl hover:bg-yellow-500 transition-all uppercase tracking-widest text-[10px] flex items-center gap-3 whitespace-nowrap"
+                    >
+                        View My Wall <ArrowRight size={14} />
+                    </Link>
+                  ) : (
+                    <div className="px-8 py-4 bg-white/10 text-white/40 font-black rounded-2xl uppercase tracking-widest text-[10px] animate-pulse cursor-wait">
+                        Generating Identity...
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div>
+                    <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-2">Claim Your Identity</h3>
+                    <p className="text-sm text-white/60">Join the network to start earning points and unlocking ranks.</p>
+                  </div>
+                  <Link 
+                    href="/login"
+                    className="px-8 py-4 bg-yellow-500 text-black font-black rounded-2xl hover:bg-yellow-400 transition-all uppercase tracking-widest text-[10px]"
                   >
-                     ← Close Transmission
-                  </button>
+                    Initialize Connection
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
 
-                  <div className="mb-12">
-                     <div className="h-24 w-24 rounded-full bg-gradient-to-br from-white/20 to-black border border-white/30 mb-6 flex items-center justify-center">
-                        <User className="h-8 w-8 text-white/80" />
-                     </div>
-                     <span className={`inline-block px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest mb-4 border ${
-                        selectedMember.tier === "ARCHITECT" ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/40" : 
-                        selectedMember.tier === "ELITE" ? "bg-green-500/20 text-green-400 border-green-500/40" : 
-                        "bg-white/10 text-white/60 border-white/20"
-                     }`}>
-                        {selectedMember.tier} Class
-                     </span>
-                     <h2 className="text-4xl font-black uppercase tracking-tighter text-white mb-2">
-                        {selectedMember.name}
-                     </h2>
-                     <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/40">
-                        Network Rank #{selectedMember.rank}
-                     </span>
-                  </div>
+      {/* Leaderboard Section */}
+      <section className="relative py-32 px-8 z-10 bg-black">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-end mb-12">
+            <div>
+              <Trophy className="w-12 h-12 text-yellow-500 mb-6" />
+              <h2 className="text-5xl font-black uppercase italic tracking-tighter">Fame <span className="text-white/20">Legends</span></h2>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mt-2">Top Performing Athletes Worldwide</p>
+            </div>
+            <Link href="/fame-network/leaderboard" className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors border-b border-white/10 pb-1">
+              View Full Rankings
+            </Link>
+          </div>
 
-                  <div className="space-y-8">
-                     <div>
-                        <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 border-b border-white/10 pb-2 mb-4">
-                           Verified Gear
-                        </h3>
-                        <div className="space-y-3">
-                           {selectedMember.gear.map((item: string, idx: number) => (
-                              <div key={idx} className="flex items-center gap-3 text-white/80 group cursor-pointer hover:translate-x-2 transition-transform">
-                                 <ShieldCheck className="h-4 w-4 text-green-500" />
-                                 <span className="text-xs font-bold uppercase tracking-wider">{item}</span>
-                              </div>
-                           ))}
-                        </div>
-                     </div>
+          {topLeaders.length > 0 ? (
+            <LeaderboardList leaders={topLeaders} />
+          ) : (
+            <div className="py-20 text-center border-2 border-dashed border-white/10 rounded-[3rem]">
+                <p className="text-white/20 font-black uppercase tracking-widest text-xs">Waiting for the first legend to rise</p>
+                <p className="text-[10px] text-white/10 uppercase mt-2">Earn points to claim your spot on the wall</p>
+            </div>
+          )}
+        </div>
+      </section>
 
-                     <div>
-                        <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 border-b border-white/10 pb-2 mb-4">
-                           Network Stats
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                           <div className="bg-white/5 p-4 rounded-xl border border-white/10">
-                              <span className="block text-[8px] font-black uppercase tracking-widest text-white/30 mb-1">Referrals</span>
-                              <span className="block text-xl font-black text-white">24</span>
-                           </div>
-                           <div className="bg-white/5 p-4 rounded-xl border border-white/10">
-                              <span className="block text-[8px] font-black uppercase tracking-widest text-white/30 mb-1">Points</span>
-                              <span className="block text-xl font-black text-white">8.5K</span>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-
-                  <div className="mt-auto">
-                     <Link href={`/fame-network/${selectedMember.id}`} className="w-full py-4 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] rounded-xl hover:bg-white/90 transition-colors flex items-center justify-center gap-2">
-                        View Full Profile <ChevronRight className="h-3 w-3" />
-                     </Link>
-                  </div>
-               </motion.div>
-            )}
-         </AnimatePresence>
-      </div>
+      {/* Rewards Teaser */}
+      <section className="relative py-32 px-8 z-10 border-t border-white/5">
+        <div className="max-w-7xl mx-auto text-center">
+            <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter italic mb-16">
+                Status has its <span className="text-yellow-500">Privileges</span>
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {[
+                    { title: "Rookie", desc: "Access to the Network hub and profile.", color: "white/10" },
+                    { title: "Pro", desc: "Unlock early access to apparel drops.", color: "blue-500/20" },
+                    { title: "All-Star", desc: "10% lifetime discount on footwear.", color: "purple-500/20" },
+                    { title: "Legend", desc: "Exclusive Hall of Fame kit claim.", color: "yellow-500/20" },
+                ].map((tier, i) => (
+                    <div key={i} className={`p-10 rounded-[2.5rem] bg-${tier.color} border border-white/10 text-left`}>
+                        <h4 className="text-xl font-black uppercase italic mb-4">{tier.title}</h4>
+                        <p className="text-xs text-white/40 leading-relaxed">{tier.desc}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+      </section>
 
       {/* Footer Instructions */}
-      <div className="absolute bottom-8 left-8 right-8 flex justify-between pointer-events-none mix-blend-difference z-0">
-         <span className="text-[9px] font-black uppercase tracking-widest text-white/40">
-            Drag to Rotate • Scroll to Zoom
-         </span>
-         <span className="text-[9px] font-black uppercase tracking-widest text-white/40">
-            3,421 Active Nodes
+      <div className="relative py-12 px-8 z-10 text-center border-t border-white/5">
+         <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/20">
+            Grassland Sports Division • Distributed Performance Network • 2026
          </span>
       </div>
     </div>

@@ -21,6 +21,17 @@ export const orderStatusEnum = pgEnum("order_status", [
   "CANCELLED",
 ]);
 export const orderTypeEnum = pgEnum("order_type", ["NORMAL", "PRE_ORDER"]);
+export const fameRankEnum = pgEnum("fame_rank", [
+  "ROOKIE",
+  "PRO",
+  "ALL_STAR",
+  "LEGEND",
+  "HALL_OF_FAME",
+]);
+export const referralStatusEnum = pgEnum("referral_status", [
+  "PENDING",
+  "SUCCESSFUL",
+]);
 
 // Tables
 export const users = pgTable("users", {
@@ -38,11 +49,53 @@ export const users = pgTable("users", {
   phone: varchar("phone", { length: 20 }),
   // Fame Network (FN) Extension
   isFnMember: boolean("is_fn_member").default(false),
-  fnRank: integer("fn_rank"),
-  fnNetworkTier: varchar("fn_tier", { length: 50 }).default("PIONEER"), // PIONEER, ELITE, AMBASSADOR
-  fnAccessKey: varchar("fn_access_key", { length: 50 }),
+  famePoints: integer("fame_points").default(0).notNull(),
+  fameRank: fameRankEnum("fame_rank").default("ROOKIE").notNull(),
+  fameCode: varchar("fame_code", { length: 50 }).unique(),
+  isSquadLeader: boolean("is_squad_leader").default(false),
+  currentStreak: integer("current_streak").default(0).notNull(),
+  maxStreak: integer("max_streak").default(0).notNull(),
+  lastActive: timestamp("last_active"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const badges = pgTable("badges", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  icon: varchar("icon", { length: 50 }).notNull(),
+  category: varchar("category", { length: 50 }).notNull(), // 'STREAKS', 'SQUAD', 'SHOPPING', 'SPECIAL'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const userBadges = pgTable("user_badges", {
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  badgeId: varchar("badge_id", { length: 255 }).references(() => badges.id).notNull(),
+  unlockedAt: timestamp("unlocked_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    pk: uuid("id").defaultRandom().primaryKey(), // Simple PK for junction
+  };
+});
+
+export const referrals = pgTable("referrals", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  referrerId: uuid("referrer_id").references(() => users.id).notNull(),
+  refereeId: uuid("referee_id").references(() => users.id).unique().notNull(),
+  status: referralStatusEnum("status").default("PENDING").notNull(),
+  pointsAwarded: integer("points_awarded").default(0).notNull(),
+  nudgeCount: integer("nudge_count").default(0).notNull(),
+  lastNudgedAt: timestamp("last_nudged_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const activityLogs = pgTable("activity_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  action: varchar("action", { length: 100 }).notNull(), // e.g., 'DAILY_LOGIN', 'UGC_POST', 'PURCHASE', 'SQUAD_BONUS'
+  pointsAwarded: integer("points_awarded").default(0).notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
 export const products = pgTable("products", {
@@ -142,13 +195,54 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     references: [ghfMembership.userId],
   }),
   authenticityTokens: many(productAuthenticity),
+  badges: many(userBadges),
+  referrals: many(referrals, { relationName: "referrer" }),
+  referredBy: one(referrals, {
+    fields: [users.id],
+    references: [referrals.refereeId],
+    relationName: "referee",
+  }),
+  activityLogs: many(activityLogs),
+}));
+
+export const badgesRelations = relations(badges, ({ many }) => ({
+  users: many(userBadges),
+}));
+
+export const userBadgesRelations = relations(userBadges, ({ one }) => ({
+  user: one(users, {
+    fields: [userBadges.userId],
+    references: [users.id],
+  }),
+  badge: one(badges, {
+    fields: [userBadges.badgeId],
+    references: [badges.id],
+  }),
+}));
+
+export const referralsRelations = relations(referrals, ({ one }) => ({
+  referrer: one(users, {
+    fields: [referrals.referrerId],
+    references: [users.id],
+    relationName: "referrer",
+  }),
+  referee: one(users, {
+    fields: [referrals.refereeId],
+    references: [users.id],
+    relationName: "referee",
+  }),
+}));
+
+export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [activityLogs.userId],
+    references: [users.id],
+  }),
 }));
 
 export const productsRelations = relations(products, ({ many }) => ({
   authenticityTokens: many(productAuthenticity),
 }));
-
-// Replaced by ordersRelationsWithItems below
 
 export const productAuthenticityRelations = relations(productAuthenticity, ({ one }) => ({
   product: one(products, {
